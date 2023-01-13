@@ -2,16 +2,17 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"net"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
+	_ "github.com/mattn/go-sqlite3"
+
 	"github.com/andreis3/grpc-go/internal/database"
 	"github.com/andreis3/grpc-go/internal/pb"
 	"github.com/andreis3/grpc-go/internal/service"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -19,7 +20,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(db)
 
 	categoryDB := database.NewCategory(db)
 	categoryService := service.NewCategoryService(*categoryDB)
@@ -32,7 +38,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
+	fmt.Println("Server is running on port 50051")
 	if err := grpcServer.Serve(lis); err != nil {
 		panic(err)
 	}
